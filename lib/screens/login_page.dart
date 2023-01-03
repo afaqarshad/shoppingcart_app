@@ -42,6 +42,7 @@ class _LoginPageState extends State<LoginPage> {
                         child: Column(
                           children: [
                             TextField(
+                              keyboardType: TextInputType.emailAddress,
                               controller: emailcontroller,
                               style: const TextStyle(color: Colors.black),
                               decoration: InputDecoration(

@@ -73,6 +73,7 @@ class _SigninPageState extends State<SignupPage> {
                           ),
                           TextField(
                             controller: emailcontroller,
+                            keyboardType: TextInputType.emailAddress,
                             style: const TextStyle(color: Colors.white),
                             decoration: InputDecoration(
                                 enabledBorder: OutlineInputBorder(
