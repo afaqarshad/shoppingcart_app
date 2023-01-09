@@ -1,25 +1,21 @@
-import 'dart:io';
-
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import 'package:shoppingcart_app/utils/app_toast.dart';
+import 'package:shoppingcart_app/view/widgets/mytextfromfields.dart';
+import 'package:shoppingcart_app/viewmodel/auth_viewmodel.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+class HomePage extends StatelessWidget {
+  HomePage({super.key});
 
-  @override
-  State<HomePage> createState() => _HomePageState();
-}
-
-class _HomePageState extends State<HomePage> {
-  String? imageUrl;
   TextEditingController productNameController = TextEditingController();
+
   TextEditingController priceController = TextEditingController();
+
   TextEditingController descriptionController = TextEditingController();
 
+  var isFavorite = [];
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -38,51 +34,32 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.start,
             children: [
-              TextField(
-                controller: productNameController,
-                style: const TextStyle(),
-                decoration: InputDecoration(
-                    fillColor: Colors.grey.shade100,
-                    filled: true,
-                    hintText: "Product",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    )),
+              MyTextFormFields(
+                  hintText: 'Product Name',
+                  obsText: false,
+                  textController: productNameController),
+              const SizedBox(
+                height: 5,
+              ),
+              MyTextFormFields(
+                hintText: 'description ',
+                obsText: false,
+                textController: descriptionController,
               ),
               const SizedBox(
                 height: 5,
               ),
-              TextField(
-                controller: descriptionController,
-                style: const TextStyle(),
-                decoration: InputDecoration(
-                    fillColor: Colors.grey.shade100,
-                    filled: true,
-                    hintText: "Color",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    )),
-              ),
-              const SizedBox(
-                height: 5,
-              ),
-              TextField(
-                controller: priceController,
-                style: const TextStyle(),
-                decoration: InputDecoration(
-                    fillColor: Colors.grey.shade100,
-                    filled: true,
-                    hintText: "Price",
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(10),
-                    )),
+              MyTextFormFields(
+                hintText: 'Price',
+                obsText: false,
+                textController: priceController,
               ),
               const SizedBox(
                 height: 5,
               ),
               ElevatedButton(
                   onPressed: () {
-                    uploadImage();
+                    context.read<AuthViewModel>().uploadImage();
                   },
                   child: const Text('Select Image')),
               Padding(
@@ -97,23 +74,11 @@ class _HomePageState extends State<HomePage> {
                         color: Colors.white,
                         onPressed: () {
                           try {
-                            var uid = FirebaseAuth.instance.currentUser!.uid;
-                            FirebaseFirestore.instance
-                                .collection('items')
-                                .doc()
-                                .set(
-                              {
-                                'productName': productNameController.text,
-                                'description': descriptionController.text,
-                                'price': priceController.text,
-                                'uid': uid,
-                                'favorite': false,
-                                'images': imageUrl.toString(),
-                              },
-                            );
-                            productNameController.clear();
-                            priceController.clear();
-                            descriptionController.clear();
+                            context.read<AuthViewModel>().firebaseCollection(
+                                productNameController: productNameController,
+                                descriptionController: descriptionController,
+                                priceController: priceController,
+                                context: context);
                             AppToast.successToast(
                                 masg: "Item Save Successfully");
                           } catch (e) {
@@ -166,9 +131,10 @@ class _HomePageState extends State<HomePage> {
                                       topLeft: Radius.circular(16.0),
                                       topRight: Radius.circular(16.0),
                                     ),
-                                    child: (imageUrl != null)
+                                    child: (snapshot.data!.docs[index]
+                                                ['images'] !=
+                                            null)
                                         ? Image.network(
-                                            // imageUrl.toString(),
                                             snapshot.data!.docs[index]
                                                 ['images'],
                                             height: 200,
@@ -220,7 +186,25 @@ class _HomePageState extends State<HomePage> {
                                               MainAxisAlignment.end,
                                           children: [
                                             IconButton(
-                                              onPressed: () {},
+                                              onPressed: () {
+                                                var docID = snapshot
+                                                    .data!.docs[index].id;
+                                                context
+                                                    .read<AuthViewModel>()
+                                                    .deleteItem(docID);
+                                                AppToast.successToast(
+                                                    masg: "Item Deleted");
+                                              },
+                                              icon: const Icon(Icons.delete),
+                                            ),
+                                            IconButton(
+                                              onPressed: () {
+                                                var docID = snapshot
+                                                    .data!.docs[index].id;
+                                                context
+                                                    .read<AuthViewModel>()
+                                                    .deleteItem(docID);
+                                              },
                                               icon: const Icon(Icons.favorite),
                                             ),
                                             IconButton(
@@ -238,9 +222,12 @@ class _HomePageState extends State<HomePage> {
                               ),
                             );
                           }));
+                    } else if (snapshot.connectionState ==
+                        ConnectionState.waiting) {
+                      return const CircularProgressIndicator();
+                    } else {
+                      return const Text("Some thing wrong");
                     }
-
-                    return const CircularProgressIndicator();
                   }),
                 ),
               ),
@@ -249,21 +236,5 @@ class _HomePageState extends State<HomePage> {
         ),
       ),
     );
-  }
-
-  uploadImage() async {
-    final firebaseStorage = FirebaseStorage.instance;
-    final picker = ImagePicker();
-    XFile? image;
-
-    image = await picker.pickImage(source: ImageSource.gallery);
-    var file = File(image!.path);
-
-    var snapshot = await firebaseStorage.ref().child('images').putFile(file);
-
-    var downloadUrl = await snapshot.ref.getDownloadURL();
-    setState(() {
-      imageUrl = downloadUrl;
-    });
   }
 }

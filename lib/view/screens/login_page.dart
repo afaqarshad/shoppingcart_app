@@ -1,17 +1,16 @@
 import 'package:flutter/material.dart';
-import 'package:shoppingcart_app/auth/authentication_services.dart';
-import 'package:shoppingcart_app/screens/signup_page.dart';
+import 'package:provider/provider.dart';
+import 'package:shoppingcart_app/view/screens/signup_page.dart';
+import 'package:shoppingcart_app/view/widgets/mytextfromfields.dart';
+import 'package:shoppingcart_app/viewmodel/auth_viewmodel.dart';
 
-class LoginPage extends StatefulWidget {
-  const LoginPage({super.key});
+class LoginPage extends StatelessWidget {
+  LoginPage({super.key});
 
-  @override
-  State<LoginPage> createState() => _LoginPageState();
-}
-
-class _LoginPageState extends State<LoginPage> {
   TextEditingController emailcontroller = TextEditingController();
+
   TextEditingController passcontroller = TextEditingController();
+
   @override
   Widget build(BuildContext context) {
     return Container(
@@ -41,32 +40,18 @@ class _LoginPageState extends State<LoginPage> {
                         margin: const EdgeInsets.only(left: 35, right: 35),
                         child: Column(
                           children: [
-                            TextField(
-                              keyboardType: TextInputType.emailAddress,
-                              controller: emailcontroller,
-                              style: const TextStyle(color: Colors.black),
-                              decoration: InputDecoration(
-                                  fillColor: Colors.grey.shade100,
-                                  filled: true,
-                                  hintText: "Email",
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  )),
+                            MyTextFormFields(
+                              hintText: 'Enter E-mail',
+                              obsText: false,
+                              textController: emailcontroller,
                             ),
                             const SizedBox(
                               height: 30,
                             ),
-                            TextField(
-                              controller: passcontroller,
-                              style: const TextStyle(),
-                              obscureText: true,
-                              decoration: InputDecoration(
-                                  fillColor: Colors.grey.shade100,
-                                  filled: true,
-                                  hintText: "Password",
-                                  border: OutlineInputBorder(
-                                    borderRadius: BorderRadius.circular(10),
-                                  )),
+                            MyTextFormFields(
+                              hintText: 'Enter Password',
+                              obsText: true,
+                              textController: passcontroller,
                             ),
                             const SizedBox(
                               height: 40,
@@ -86,10 +71,10 @@ class _LoginPageState extends State<LoginPage> {
                                   child: IconButton(
                                     color: Colors.white,
                                     onPressed: () {
-                                      AuthenticationServices.login(
+                                      context.read<AuthViewModel>().login(
                                           context: context,
-                                          email: emailcontroller.text,
-                                          password: passcontroller.text);
+                                          email: emailcontroller,
+                                          password: passcontroller);
                                     },
                                     icon: const Icon(
                                       Icons.arrow_forward,
@@ -109,7 +94,7 @@ class _LoginPageState extends State<LoginPage> {
                                     Navigator.of(context).push(
                                         MaterialPageRoute(
                                             builder: (context) =>
-                                                const SignupPage()));
+                                                SignupPage()));
                                   },
                                   style: const ButtonStyle(),
                                   child: const Text(
